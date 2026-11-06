@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ricards Library Oracle - Year 7 Magical Book Fortune</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .perspective { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+
+    /* 🌌 ギャラクシー背景 & 星のアニメーション */
+    body {
+      background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+      background-attachment: fixed;
+      overflow-x: hidden;
+    }
+
+    .stars-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .star {
+      position: absolute;
+      background-color: #ffffff;
+      border-radius: 50%;
+      animation: twinkle var(--duration, 4s) infinite ease-in-out var(--delay, 0s);
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.3); box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
+    }
+
+    .nebula {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80vw;
+      height: 80vh;
+      background: radial-gradient(circle, rgba(147, 51, 234, 0.15) 0%, rgba(79, 70, 229, 0.1) 40%, rgba(0, 0, 0, 0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* 🌠 流れ星のアニメーション */
+    .shooting-star {
+      position: fixed;
+      height: 2px;
+      background: linear-gradient(-45deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+      border-radius: 999px;
+      filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8));
+      animation: tail 1.5s ease-in-out, shooting 1.5s ease-in-out;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    @keyframes tail {
+      0% { width: 0; }
+      30% { width: 100px; }
+      100% { width: 0; }
+    }
+
+    @keyframes shooting {
+      0% { transform: translateX(0) translateY(0) rotate(-35deg); opacity: 1; }
+      100% { transform: translateX(400px) translateY(280px) rotate(-35deg); opacity: 0; }
+    }
+
+    /* 🛸 UFOのアニメーション */
+    .ufo {
+      position: fixed;
+      width: 24px;
+      height: 10px;
+      background: radial-gradient(ellipse at center, #60a5fa 0%, #1e40af 70%);
+      border-radius: 50%;
+      box-shadow: 0 0 10px #60a5fa, 0 0 20px #3b82f6;
+      pointer-events: none;
+      z-index: 1;
+      animation: ufoFly 8s linear forwards;
+    }
+
+    .ufo::after {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: 7px;
+      width: 10px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 50% 50% 0 0;
+      box-shadow: 0 0 4px #ffffff;
+    }
+
+    @keyframes ufoFly {
+      0% { left: -50px; top: var(--startY, 30vh); transform: translateY(0) scale(0.6); opacity: 0; }
+      10% { opacity: 1; }
+      50% { transform: translateY(-30px) scale(1); }
+      90% { opacity: 1; }
+      100% { left: 105vw; top: var(--endY, 50vh); transform: translateY(20px) scale(0.6); opacity: 0; }
+    }
+  </style>
+</head>
+<body class="text-amber-50 min-h-screen font-sans p-4 md:p-8 relative">
+  
+  <!-- 🌌 宇宙の背景レイヤー -->
+  <div class="nebula"></div>
+  <div id="stars" class="stars-container"></div>
+
+  <!-- 🎵 BGM コントロールボタン -->
+  <button id="bgm-toggle-btn" onclick="toggleBGM()" class="fixed top-4 right-4 z-50 bg-slate-900/80 border border-amber-400/60 text-amber-300 hover:bg-amber-900/80 text-xs md:text-sm font-semibold py-2 px-3 rounded-full shadow-lg backdrop-blur transition-all flex items-center gap-1.5">
+    <span id="bgm-icon">🔇</span> <span id="bgm-text">BGM: OFF</span>
+  </button>
+
+  <div class="max-w-6xl mx-auto relative z-10">
+    <!-- Header -->
+    <header class="text-center mb-8 bg-slate-900/40 p-6 rounded-2xl border border-amber-500/20 backdrop-blur-sm shadow-2xl">
+      <h1 class="text-3xl md:text-5xl font-bold tracking-wider text-amber-400 mb-2 font-serif drop-shadow-[0_2px_10px_rgba(251,191,36,0.3)]">✨ RICARDS LIBRARY ORACLE ✨</h1>
+      <p class="text-amber-200/90 text-sm md:text-base">Year 7 Edition: Choose ONE card to reveal your destiny, book match, and lucky library spot.</p>
+    </header>
+
+    <!-- Status / Announcement -->
+    <div id="status-box" class="bg-indigo-950/40 border border-amber-500/30 rounded-xl p-4 mb-8 text-center transition-all duration-300 backdrop-blur-md shadow-xl">
+      <p id="status-text" class="text-amber-300 font-medium">🔮 Trust your intuition: Select <strong>ONE</strong> card to reveal your true reading destiny...</p>
+    </div>
+
+    <!-- 12 Card Grid -->
+    <div id="card-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
+      <!-- Cards rendered via JS -->
+    </div>
+  </div>
+
+  <script>
+    // 🌟 星々の生成
+    function createStars() {
+      const container = document.getElementById('stars');
+      const starCount = 60;
+      for (let i = 0; i < starCount; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        const size = Math.random() * 3 + 1;
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        star.style.top = `${Math.random() * 100}%`;
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.setProperty('--duration', `${Math.random() * 3 + 2}s`);
+        star.style.setProperty('--delay', `${Math.random() * 3}s`);
+        container.appendChild(star);
+      }
+    }
+    createStars();
+
+    // 🌠 流れ星を定期的に流す処理
+    function spawnShootingStar() {
+      const container = document.getElementById('stars');
+      const star = document.createElement('div');
+      star.className = 'shooting-star';
+      
+      star.style.top = `${Math.random() * 50}%`;
+      star.style.left = `${Math.random() * 70 + 10}%`;
+
+      container.appendChild(star);
+      setTimeout(() => star.remove(), 1600);
+    }
+
+    // 5秒〜12秒ごとにランダムで流れ星が出現
+    function loopShootingStars() {
+      spawnShootingStar();
+      const nextTime = Math.random() * 7000 + 5000;
+      setTimeout(loopShootingStars, nextTime);
+    }
+    loopShootingStars();
+
+    // 🛸 UFOを定期的に飛行させる処理
+    function spawnUFO() {
+      const container = document.getElementById('stars');
+      const ufo = document.createElement('div');
+      ufo.className = 'ufo';
+
+      const startY = Math.random() * 50 + 10;
+      const endY = Math.random() * 50 + 10;
+      ufo.style.setProperty('--startY', `${startY}vh`);
+      ufo.style.setProperty('--endY', `${endY}vh`);
+
+      container.appendChild(ufo);
+      setTimeout(() => ufo.remove(), 8500);
+    }
+
+    // 15秒〜30秒ごとにたまにUFOが横切る
+    function loopUFO() {
+      spawnUFO();
+      const nextTime = Math.random() * 15000 + 15000;
+      setTimeout(loopUFO, nextTime);
+    }
+    setTimeout(loopUFO, 8000); // 起動8秒後に1回目のUFO登場
+
+    const originalCardData = [
+      { 
+        id: 1, 
+        name: "I. The Demigod", 
+        term: "Brave Action & Heroic Growth", 
+        book: "Percy Jackson & The Lightning Thief", 
+        spot: "Classics & Fantasy Corner",
+        image: "https://m.media-amazon.com/images/I/81+8Yw7gHrL._SL1500_.jpg"
+      },
+      { 
+        id: 2, 
+        name: "II. The Agent", 
+        term: "Uncovering Secrets & Superpowers", 
+        book: "Amari and the Night Brothers", 
+        spot: "New Arrivals Display",
+        image: "https://m.media-amazon.com/images/I/81F3Og-WQyL._SL1500_.jpg"
+      },
+      { 
+        id: 3, 
+        name: "III. The Wizard", 
+        term: "Sparkling Curiosity & Wonder", 
+        book: "Harry Potter and the Philosopher's Stone", 
+        spot: "Quiet Study Tables (Row 1)",
+        image: "https://m.media-amazon.com/images/I/81q77Q39nEL._SL1500_.jpg"
+      },
+      { 
+        id: 4, 
+        name: "IV. The Rider", 
+        term: "High Courage & Fierce Loyalty", 
+        book: "Skandar and the Unicorn Thief", 
+        spot: "Adventure & Fantasy Shelf",
+        image: "https://m.media-amazon.com/images/I/81EGWNQ8S9L._SL1500_.jpg"
+      },
+      { 
+        id: 5, 
+        name: "V. The Genius", 
+        term: "Clever Minds & Standing Up", 
+        book: "Matilda", 
+        spot: "Quick Reads & Humor Shelf",
+        image: "https://m.media-amazon.com/images/I/81N9eGv-5ML._SL1500_.jpg"
+      },
+      { 
+        id: 6, 
+        name: "VI. The Telepath", 
+        term: "Unlocking Secrets & Deep Bonds", 
+        book: "Keeper of the Lost Cities", 
+        spot: "Fiction Bay 3",
+        image: "https://m.media-amazon.com/images/I/81UXV2vgirL._SL1500_.jpg"
+      },
+      { 
+        id: 7, 
+        name: "VII. The Comedian", 
+        term: "Laughter, Creativity & Good Times", 
+        book: "The Brilliant World of Tom Gates", 
+        spot: "Graphic Novels & Illustrated Corner",
+        image: "https://m.media-amazon.com/images/I/81NKs23NXnL._SL1500_.jpg"
+      },
+      { 
+        id: 8, 
+        name: "VIII. The Adventurer", 
+        term: "Cozy Comfort & Big Journeys", 
+        book: "The Hobbit", 
+        spot: "Soft Beanbag Lounge",
+        image: "https://m.media-amazon.com/images/I/81uEDUfKBZL._SL1500_.jpg"
+      },
+      { 
+        id: 9, 
+        name: "IX. The Dreamer", 
+        term: "Kindness, Hope & Heartfelt Thoughts", 
+        book: "The Boy, the Mole, the Fox and the Horse", 
+        spot: "Window Seat by the Garden View",
+        image: "https://m.media-amazon.com/images/I/81PdkxXJObL._SL1500_.jpg"
+      },
+      { 
+        id: 10, 
+        name: "X. The Survivor", 
+        term: "Inner Strength & Sharp Instincts", 
+        book: "Hatchet", 
+        spot: "Survival & Outdoor Non-Fiction Shelf",
+        image: "https://m.media-amazon.com/images/I/81gBV90F+zL._SL1500_.jpg"
+      },
+      { 
+        id: 11, 
+        name: "XI. The Explorer", 
+        term: "Boundless Imagination & Discovery", 
+        book: "Northern Lights (His Dark Materials)", 
+        spot: "Libby App / eBooks Station",
+        image: "https://m.media-amazon.com/images/I/71BMww4FsnL._SL1500_.jpg"
+      },
+      { 
+        id: 12, 
+        name: "XII. The Detective", 
+        term: "Sharp Focus & Solved Mysteries", 
+        book: "High Rise Mystery", 
+        spot: "Mystery & Crime Display",
+        image: "https://m.media-amazon.com/images/I/71zCAFAvVhL._SL1500_.jpg"
+      }
+    ];
+
+    let currentCardData = [];
+    let hasFlipped = false;
+    let audioCtx = null;
+    let bgmIsPlaying = false;
+    let bgmInterval = null;
+
+    function shuffleArray(array) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function startBGM() {
+      const ctx = getAudioContext();
+      bgmIsPlaying = true;
+      updateBGMButtonUI();
+
+      const ambientChords = [
+        [130.81, 196.00, 246.94, 329.63],
+        [146.83, 220.00, 261.63, 349.23],
+        [110.00, 164.81, 246.94, 293.66],
+        [174.61, 261.63, 329.63, 392.00]
+      ];
+
+      let step = 0;
+
+      function playChord() {
+        if (!bgmIsPlaying) return;
+        const now = ctx.currentTime;
+        const chord = ambientChords[step % ambientChords.length];
+
+        chord.forEach(freq => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.04, now + 2);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 7);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 7.5);
+        });
+
+        if (Math.random() > 0.3) {
+          const sparkFreq = [1046.50, 1318.51, 1567.98, 2093.00][Math.floor(Math.random() * 4)];
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(sparkFreq, now + 1.5);
+
+          gain.gain.setValueAtTime(0.001, now + 1.5);
+          gain.gain.linearRampToValueAtTime(0.015, now + 2);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 4);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now + 1.5);
+          osc.stop(now + 4.5);
+        }
+
+        step++;
+      }
+
+      playChord();
+      bgmInterval = setInterval(playChord, 6500);
+    }
+
+    function stopBGM() {
+      bgmIsPlaying = false;
+      if (bgmInterval) clearInterval(bgmInterval);
+      updateBGMButtonUI();
+    }
+
+    function toggleBGM() {
+      if (bgmIsPlaying) {
+        stopBGM();
+      } else {
+        startBGM();
+      }
+    }
+
+    function updateBGMButtonUI() {
+      const icon = document.getElementById('bgm-icon');
+      const text = document.getElementById('bgm-text');
+      const btn = document.getElementById('bgm-toggle-btn');
+
+      if (bgmIsPlaying) {
+        icon.textContent = '🎶';
+        text.textContent = 'BGM: ON';
+        btn.classList.add('border-amber-400', 'bg-amber-900/90');
+      } else {
+        icon.textContent = '🔇';
+        text.textContent = 'BGM: OFF';
+        btn.classList.remove('border-amber-400', 'bg-amber-900/90');
+      }
+    }
+
+    function playMagicSound() {
+      try {
+        const ctx = getAudioContext();
+        const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98];
+        const now = ctx.currentTime;
+        
+        notes.forEach((freq, index) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          const startTime = now + (index * 0.04);
+
+          osc.frequency.setValueAtTime(freq, startTime);
+          gain.gain.setValueAtTime(0.25, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(startTime);
+          osc.stop(startTime + 0.4);
+        });
+      } catch (e) {
+        console.log("Audio play error:", e);
+      }
+    }
+
+    function initOracle() {
+      hasFlipped = false;
+      currentCardData = shuffleArray(originalCardData);
+
+      const grid = document.getElementById('card-grid');
+      grid.innerHTML = '';
+
+      currentCardData.forEach((card, index) => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card-wrapper perspective h-96 cursor-pointer select-none';
+        cardEl.setAttribute('data-id', index);
+        cardEl.onclick = () => flipCard(index);
+
+        cardEl.innerHTML = `
+          <div id="card-inner-${index}" class="card-inner relative w-full h-full duration-700 transform-style-3d transition-transform">
+            <!-- Front -->
+            <div class="card-front absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 border-2 border-amber-500/50 rounded-xl p-3 flex flex-col justify-between items-center shadow-2xl backface-hidden">
+              <div class="w-full flex justify-between text-xs text-amber-400/60 font-mono">
+                <span>★</span><span>${index + 1}</span><span>★</span>
+              </div>
+              <div class="w-16 h-16 rounded-full border border-amber-400/30 flex items-center justify-center bg-amber-400/5 shadow-inner">
+                <span class="text-2xl text-amber-300">🌙</span>
+              </div>
+              <p class="text-xs text-amber-300/80 tracking-widest font-serif uppercase">Library Oracle</p>
+            </div>
+
+            <!-- Back -->
+            <div class="card-back absolute inset-0 bg-amber-100 text-slate-900 border-2 border-amber-400 rounded-xl p-2 flex flex-col justify-between shadow-2xl backface-hidden rotate-y-180 overflow-hidden">
+              <div class="flex-1 flex flex-col">
+                <div class="text-center border-b border-amber-300/80 pb-1 mb-1">
+                  <span class="text-[11px] font-bold tracking-wider text-amber-900 uppercase font-serif block">${card.name}</span>
+                  <span class="text-[10px] font-bold text-indigo-950 block">✨ ${card.term}</span>
+                </div>
+                
+                <div class="w-full h-52 my-auto flex items-center justify-center rounded bg-amber-200/40 p-1 border border-amber-300/50">
+                  <img src="${card.image}" alt="${card.book}" class="max-h-full max-w-full object-contain rounded shadow-md">
+                </div>
+
+                <div class="bg-amber-200/80 p-1 rounded text-[10px] text-center mt-1">
+                  <span class="font-bold text-amber-950">📖 ${card.book}</span>
+                </div>
+              </div>
+
+              <div class="text-[9px] bg-indigo-950 text-amber-100 p-1.5 rounded text-center mt-1">
+                <span class="font-semibold text-amber-300">📍 Lucky Spot:</span> <span>${card.spot}</span>
+              </div>
+            </div>
+          </div>
+        `;
+        grid.appendChild(cardEl);
+      });
+    }
+
+    function flipCard(selectedIndex) {
+      if (!bgmIsPlaying) {
+        startBGM();
+      }
+
+      if (hasFlipped) return;
+      hasFlipped = true;
+
+      playMagicSound();
+
+      const chosenInner = document.getElementById(`card-inner-${selectedIndex}`);
+      if (chosenInner) {
+        chosenInner.classList.add('rotate-y-180');
+      }
+
+      const statusBox = document.getElementById('status-box');
+      const statusText = document.getElementById('status-text');
+      statusBox.className = 'bg-amber-500/20 border border-amber-400 rounded-xl p-4 mb-8 text-center transition-all duration-300 shadow-lg backdrop-blur-md';
+      statusText.innerHTML = `🌟 <strong>Fate Revealed!</strong> You selected <em>${currentCardData[selectedIndex].name}</em>. Head to your lucky spot in the library!`;
+
+      const allCards = document.querySelectorAll('.card-wrapper');
+      allCards.forEach((card, idx) => {
+        if (idx !== selectedIndex) {
+          card.classList.add('opacity-30', 'pointer-events-none', 'filter', 'grayscale-[50%]');
+        } else {
+          card.classList.remove('cursor-pointer');
+        }
+      });
+    }
+
+    window.addEventListener('click', () => {
+      if (!bgmIsPlaying && audioCtx === null) {
+        startBGM();
+      }
+    }, { once: true });
+
+    initOracle();
+  </script>
+</body>
+</html>
